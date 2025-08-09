@@ -1,4 +1,6 @@
-**Background Commands**: Use `systemd-run` not `nohup`/`&`
+**Background Commands**: Use `systemd-run` not `nohup`/&
+
+**Scope**: The `systemd-run` guidance and examples below are intended specifically for use by the Codex agent when it needs to launch transient services from automation in this repository. These examples should not be assumed appropriate for other tooling, users, or environments without review.
 
 - **Why**: `nohup somecmd &` starts a process in the background but relies on shell job control and leaves the process unmanaged by the init system. `systemd-run` launches the command as a transient systemd service which gives you better lifecycle, logging, and cleanup tools.
 - **Policy**: Do not use `nohup` or `cmd &` to run long-running background commands in this repository's examples and automation. Prefer `systemd-run`.
