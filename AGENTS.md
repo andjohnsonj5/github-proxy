@@ -14,6 +14,12 @@ Examples
 - Run a one-off command in background and capture exit status via journalctl logs:
   `systemd-run --unit=my-task --slice=system.slice --description="one-off job" /usr/bin/env bash -c 'your-command --arg'`
 
+Usage Restrictions
+
+- **Do not use with Docker**: Do not use `systemd-run` to start or manage services inside Docker containers or to control container lifecycles. Containers and Docker orchestrators have different init and process models; launching transient systemd units inside containers is unsupported and can lead to unexpected behavior.
+- **Do not embed in scripts or checked-in automation**: Avoid placing `systemd-run` calls inside repository scripts, Dockerfiles, CI configs, or other checked-in automation. This guidance is for ephemeral, agent-driven invocations — not for persistent scripts or tooling.
+- **Only for Codex transient shell calls**: These examples are intended specifically for the Codex agent when it needs to launch short-lived transient services from an ad-hoc shell invocation. Other tooling, users, or environments should choose appropriate alternatives and review implications before adopting `systemd-run`.
+
 Notes & Best Practices
 
 - Prefer `--unit` to name the transient unit so it is easy to find and manage: `systemctl status my-proxy` / `journalctl -u my-proxy`.
