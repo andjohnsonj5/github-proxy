@@ -16,6 +16,7 @@
 - 拉取镜像示例:
   - 按 tag: `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.0`
   - 按 digest: `docker pull ghcr.io/andjohnsonj5/github-proxy-action@sha256:95063893188719e452f5fbbc5c0e286cb323d7658ff83c37b0be18a9b117f78f`
+  - 注意：本仓库已移除 `:latest` 标签（registry 中不再维护 `latest`），请使用版本标签或 digest。
 
 **本地构建（可选）**
 - 在仓库根目录构建镜像（使用仓库内 `Dockerfile`）:
