@@ -81,3 +81,13 @@ Docker 使用
 如果你需要，我可以：
 - 在 `openresty/` 目录下添加一个 `run.sh`，作为运行/重启/清理容器的便利脚本，或
 - 为 CI 提供一个带镜像前缀变量的示例脚本（用于替换 `ghcr.io` 为 `ghcr.nju.edu.cn`）。
+
+SSH 转发器（ssh-forward）部署
+
+- 容器镜像：`ghcr.io/andjohnsonj5/github-ssh-forwarder:main`（由 `.github/workflows/publish-ssh-forward.yml` 构建，支持 amd64/arm64）。
+- 运行容器（默认监听 7022 → 转发到 github.com:22）：
+  - `docker run -d --name gh-ssh-forward -p 7022:7022 ghcr.io/andjohnsonj5/github-ssh-forwarder:main`
+- 指向 443 上游：
+  - `docker run -d --name gh-ssh-forward -p 7022:7022 -e UPSTREAM_ADDR=ssh.github.com:443 ghcr.io/andjohnsonj5/github-ssh-forwarder:main`
+- 一键部署脚本（Debian 12）：
+  - `sudo bash scripts/deploy_ssh_forward_debian12.sh`
