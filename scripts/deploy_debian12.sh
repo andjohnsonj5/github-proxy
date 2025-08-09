@@ -6,6 +6,9 @@ set -euo pipefail
 # - Builds local image from proxy/ or pulls IMAGE if set
 # - Runs container with restart policy
 
+# Repo root (script may be run from other working dir)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 IMAGE_DEFAULT="github-proxy:local"
 CONTAINER_NAME_DEFAULT="github-proxy"
 HOST_PORT_DEFAULT=8000
@@ -75,12 +78,12 @@ build_or_pull_image() {
     $SUDO docker pull "$IMAGE"
   else
     # build local
-    if [ -f proxy/Dockerfile ]; then
-      info "Building local image: $IMAGE_DEFAULT from proxy/Dockerfile"
-      $SUDO docker build -t "$IMAGE_DEFAULT" -f proxy/Dockerfile proxy
+    if [ -f "$REPO_DIR/proxy/Dockerfile" ]; then
+      info "Building local image: $IMAGE_DEFAULT from $REPO_DIR/proxy/Dockerfile"
+      $SUDO docker build -t "$IMAGE_DEFAULT" -f "$REPO_DIR/proxy/Dockerfile" "$REPO_DIR/proxy"
       IMAGE="$IMAGE_DEFAULT"
     else
-      err "No proxy/Dockerfile found and no IMAGE specified. Aborting."; exit 1
+      err "No $REPO_DIR/proxy/Dockerfile found and no IMAGE specified. Aborting."; exit 1
     fi
   fi
 }
