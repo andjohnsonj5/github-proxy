@@ -2,9 +2,8 @@ name: Build and publish container
 
 on:
   push:
-    # Build on semantic version tags and on main branch.
+    # Build only on semantic version tags.
     tags: ['v*']
-    branches: ['main']
   # Allow manual runs from the Actions UI for maintenance/testing.
   workflow_dispatch: {}
 

@@ -3,7 +3,6 @@ name: Build and publish ssh-forward container
 on:
   push:
     tags: ['v*']
-    branches: ['main']
   workflow_dispatch: {}
 
 permissions:
@@ -61,4 +60,3 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=Minimal SSH TCP forwarder for GitHub
-
