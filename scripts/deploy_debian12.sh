@@ -13,7 +13,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Defaults
 # Default remote image tag (bump when publishing new release)
-DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-proxy-action:v1.0.5"
+DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-proxy-action:v1.0.6"
 IMAGE_REGISTRY="${IMAGE_REGISTRY:-}"
 BUILD_LOCAL="${BUILD_LOCAL:-0}"
 
