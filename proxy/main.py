@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import FastAPI, Request
-from starlette.responses import StreamingResponse
+from starlette.responses import StreamingResponse, Response
 import logging
 import httpx
 
@@ -64,6 +64,31 @@ async def proxy(full_path: str, request: Request):
             content=await request.body(),
         )
 
+        # Special-case: info/refs listing is small; buffer to send with Content-Length
+        if request.method.upper() == "GET" and full_path.endswith(".git/info/refs"):
+            resp = await client.send(req, stream=False)
+
+            headers = _filter_response_headers(resp.headers)
+
+            # Rewrite Location header similarly
+            new_headers = {}
+            upstream = UPSTREAM.rstrip("/")
+            base = str(request.base_url).rstrip("/")
+            for k, v in headers:
+                if k.lower() == "location" and v.startswith(upstream):
+                    new_v = base + v[len(upstream) :]
+                    new_headers[k] = new_v
+                else:
+                    new_headers[k] = v
+
+            body = resp.content
+            # Ensure deterministic framing to avoid truncation by intermediaries
+            new_headers.pop("transfer-encoding", None)
+            new_headers["Content-Length"] = str(len(body))
+
+            return Response(content=body, status_code=resp.status_code, headers=new_headers)
+
+        # Default path: stream body (e.g., git-upload-pack)
         resp = await client.send(req, stream=True)
 
         # build streaming response using a guarded async generator
