@@ -2,6 +2,7 @@ from typing import Optional
 
 from fastapi import FastAPI, Request
 from starlette.responses import StreamingResponse, Response
+import asyncio
 import logging
 import httpx
 
@@ -97,7 +98,18 @@ async def proxy(full_path: str, request: Request):
             # Close the connection deterministically to avoid mid-path buffering quirks
             new_headers["Connection"] = "close"
 
-            return Response(content=body, status_code=resp.status_code, headers=new_headers)
+            # Stream out the full body, then linger briefly before closing to help NAT flush
+            async def body_iter():
+                chunk_size = 64 * 1024
+                for i in range(0, len(body), chunk_size):
+                    yield body[i : i + chunk_size]
+                # small delay to allow tail packets to drain through middleboxes
+                try:
+                    await asyncio.sleep(0.2)
+                except Exception:
+                    pass
+
+            return StreamingResponse(body_iter(), status_code=resp.status_code, headers=new_headers)
 
         # Default path: stream body (e.g., git-upload-pack)
         resp = await client.send(req, stream=True)
