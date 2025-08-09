@@ -26,10 +26,11 @@ Docker
 - Run: `docker run --rm -p 8001:8001 --name gh-proxy openresty-github-proxy`
 - Smoke test: `bash scripts/smoke_test_openresty.sh`
 
-One-click deploy
+One-click deploy (Debian 12)
 
-- Local build + run: `bash scripts/deploy.sh`
-- Use remote image: `IMAGE=ghcr.io/<owner>/github-proxy-action:<tag> BUILD=no bash scripts/deploy.sh`
+- Pull or build then run: `sudo bash scripts/deploy_debian12.sh`
+- Use remote registry mirror: `IMAGE_REGISTRY=ghcr.nju.edu.cn sudo bash scripts/deploy_debian12.sh`
+- Build locally: `BUILD_LOCAL=1 sudo bash scripts/deploy_debian12.sh`
 
 Notes
 

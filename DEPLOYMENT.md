@@ -15,12 +15,12 @@ Docker 使用
 - 查看日志：`docker logs -f gh-proxy`
 - 停止容器：`docker stop gh-proxy`
 
-一键部署脚本
+一键部署脚本（Debian 12）
 
-- 本地构建并运行：`bash scripts/deploy.sh`
-- 自定义镜像标签（跳过构建，使用已存在镜像）：
-  - `IMAGE=ghcr.io/<owner>/github-proxy-action:<tag> BUILD=no bash scripts/deploy.sh`
-  - 端口自定义：`PORT=8080 bash scripts/deploy.sh`
+- 自动安装 Docker（若缺失）并拉取/构建镜像：`sudo bash scripts/deploy_debian12.sh`
+- 使用国内镜像前缀：`IMAGE_REGISTRY=ghcr.nju.edu.cn sudo bash scripts/deploy_debian12.sh`
+- 强制本地构建：`BUILD_LOCAL=1 sudo bash scripts/deploy_debian12.sh`
+- 覆盖容器名/端口：`CONTAINER_NAME=gh-proxy HOST_PORT=8080 sudo bash scripts/deploy_debian12.sh`
 
 下面的说明只关注使用 Docker 部署本项目，并包含在中国境内替换 GitHub Container Registry 镜像地址的方法以及常用的 Docker 运行/构建/清理命令。
 
