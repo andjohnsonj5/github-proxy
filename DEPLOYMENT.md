@@ -84,10 +84,10 @@ Docker 使用
 
 SSH 转发器（ssh-forward）部署
 
-- 容器镜像：`ghcr.io/andjohnsonj5/github-ssh-forwarder:main`（由 `.github/workflows/publish-ssh-forward.yml` 构建，支持 amd64/arm64）。
+- 容器镜像：`ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.10`（由 `.github/workflows/publish-ssh-forward.yml` 构建，支持 amd64/arm64）。
 - 运行容器（默认监听 7022 → 转发到 github.com:22）：
-  - `docker run -d --name gh-ssh-forward -p 7022:7022 ghcr.io/andjohnsonj5/github-ssh-forwarder:main`
+  - `docker run -d --name gh-ssh-forward -p 7022:7022 ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.10`
 - 指向 443 上游：
-  - `docker run -d --name gh-ssh-forward -p 7022:7022 -e UPSTREAM_ADDR=ssh.github.com:443 ghcr.io/andjohnsonj5/github-ssh-forwarder:main`
+  - `docker run -d --name gh-ssh-forward -p 7022:7022 -e UPSTREAM_ADDR=ssh.github.com:443 ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.10`
 - 一键部署脚本（Debian 12）：
   - `sudo bash scripts/deploy_ssh_forward_debian12.sh`
