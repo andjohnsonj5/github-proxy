@@ -1,9 +1,10 @@
 name: Build and publish container
 
 on:
-  # Only build and publish images when a semantic version tag is pushed.
   push:
+    # Build on semantic version tags and on main branch.
     tags: ['v*']
+    branches: ['main']
   # Allow manual runs from the Actions UI for maintenance/testing.
   workflow_dispatch: {}
 
@@ -26,15 +27,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image (on tag push)
+      - name: Compute tags
+        id: meta
+        run: |
+          ref="${GITHUB_REF}"
+          repo_owner="${{ github.repository_owner }}"
+          image="ghcr.io/${repo_owner}/github-proxy-action"
+          if [[ "$ref" == refs/tags/* ]]; then
+            tag="${ref#refs/tags/}"
+            echo "tags=${image}:${tag}
+${image}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            # branch push (e.g., main)
+            echo "tags=${image}:main
+${image}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           file: ./openresty/Dockerfile
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/github-proxy-action:${{ github.ref_name }}
-            ghcr.io/${{ github.repository_owner }}/github-proxy-action:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=OpenResty (Nginx+Lua) GitHub reverse proxy

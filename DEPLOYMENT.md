@@ -1,6 +1,6 @@
 OpenResty 部署
 
-- 配置文件：`openresty/nginx.conf`（默认监听 `127.0.0.1:8001`）。
+- 配置文件：`openresty/nginx.conf`（默认监听 `0.0.0.0:7070`）。
 - 本地前台运行（便于调试）：
   - 在仓库根目录执行：`openresty -p "$PWD/openresty" -c nginx.conf -g 'daemon off;'`
 - 后台运行（仅限临时运维场景，由 Codex/操作者手动执行）：
@@ -11,7 +11,7 @@ OpenResty 部署
 Docker 使用
 
 - 构建镜像：`docker build -t openresty-github-proxy -f openresty/Dockerfile .`
-- 运行容器：`docker run --rm -p 8001:8001 --name gh-proxy openresty-github-proxy`
+- 运行容器：`docker run --rm -p 7070:7070 --name gh-proxy openresty-github-proxy`
 - 查看日志：`docker logs -f gh-proxy`
 - 停止容器：`docker stop gh-proxy`
 
@@ -20,34 +20,36 @@ Docker 使用
 - 自动安装 Docker（若缺失）并拉取/构建镜像：`sudo bash scripts/deploy_debian12.sh`
 - 使用国内镜像前缀：`IMAGE_REGISTRY=ghcr.nju.edu.cn sudo bash scripts/deploy_debian12.sh`
 - 强制本地构建：`BUILD_LOCAL=1 sudo bash scripts/deploy_debian12.sh`
-- 覆盖容器名/端口：`CONTAINER_NAME=gh-proxy HOST_PORT=8080 sudo bash scripts/deploy_debian12.sh`
+- 覆盖容器名/端口：`CONTAINER_NAME=gh-proxy HOST_PORT=8080 CONTAINER_PORT=7070 sudo bash scripts/deploy_debian12.sh`
 
 下面的说明只关注使用 Docker 部署本项目，并包含在中国境内替换 GitHub Container Registry 镜像地址的方法以及常用的 Docker 运行/构建/清理命令。
 
-**仓库中发现的构建/发布信息（可用 `gh` 验证）**
-- Workflow: `Build and publish container`（文件：`.github/workflows/publish.yml`） — 该 workflow 已更新为仅在语义化 tag（例如 `v1.0.7`）推送时发布镜像，并同时打上 `${{ github.sha }}` 的标签；不再在 `main` 分支自动发布 `:latest`。在生产环境中请使用语义化版本标签来确保可复现的部署。你可以用 `gh` 重现这些查询：
+**仓库中构建/发布信息（可用 `gh` 验证）**
+- Workflow: `Build and publish container`（文件：`.github/workflows/publish.yml`） — 该 workflow 会在 `main` 分支推送以及语义化 tag（例如 `v1.0.8`）推送时构建并发布容器镜像：
+  - `main` 分支推送：发布 `:main` 与 `:${SHA}` 标签；
+  - tag 推送：发布 `:vX.Y.Z` 与 `:${SHA}` 标签。
   - 列出 workflows: `gh api repos/andjohnsonj5/github-proxy/actions/workflows --jq '.workflows[] | {name,path}'`
   - 列出 packages（可能需权限）: `gh api repos/andjohnsonj5/github-proxy/packages`
 
 **项目中与 Docker 相关的文件**
-- `openresty/Dockerfile`（暴露端口 `8001`，运行 OpenResty 前台）。
+- `openresty/Dockerfile`（暴露端口 `7070`，运行 OpenResty 前台）。
 
 **镜像拉取与中国镜像替换**
-- workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.7`
-- 中国镜像替换示例: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:v1.0.7`
+- workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.8`
+- 中国镜像替换示例: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:v1.0.8`
 - 拉取镜像示例:
-  - `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.7`
+  - `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.8`
   - 注意：本仓库已移除 `:latest` 标签（registry 中不再维护 `latest`），请使用版本标签。
 
 **本地构建（可选）**
 - 在仓库根目录构建镜像（使用仓库内 `Dockerfile`）:
   - `docker build -t andjohnsonj5/github-proxy-action:local -f openresty/Dockerfile .`
 
-**运行容器（推荐 Docker 原生命令）**
+-**运行容器（推荐 Docker 原生命令）**
 - 直接运行镜像（后台模式）:
-  - `docker run -d --name github-proxy -p 8001:8001 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:v1.0.7`
+  - `docker run -d --name github-proxy -p 7070:7070 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:v1.0.8`
   - 推荐在部署脚本中使用环境变量锁定镜像版本，例如：
-    - `IMAGE_TAG=${IMAGE_TAG:-v1.0.7}`
+    - `IMAGE_TAG=${IMAGE_TAG:-v1.0.8}`
     - `docker run -d --name github-proxy -p 8001:8001 ghcr.io/andjohnsonj5/github-proxy-action:${IMAGE_TAG}`
 - 查看容器日志:
   - `docker logs -f github-proxy`

@@ -13,14 +13,14 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Defaults
 # Default remote image tag (bump when publishing new release)
-DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-proxy-action:v1.0.7"
+DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-proxy-action:v1.0.8"
 IMAGE_REGISTRY="${IMAGE_REGISTRY:-}"
 BUILD_LOCAL="${BUILD_LOCAL:-0}"
 
 IMAGE_DEFAULT="openresty-github-proxy:local"
 CONTAINER_NAME_DEFAULT="gh-proxy"
-HOST_PORT_DEFAULT=8001
-CONTAINER_PORT_DEFAULT=8001
+HOST_PORT_DEFAULT=7070
+CONTAINER_PORT_DEFAULT=7070
 
 # If user provided IMAGE env, respect it; otherwise we'll decide below
 IMAGE="${IMAGE:-}"

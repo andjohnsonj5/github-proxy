@@ -18,12 +18,12 @@ Prerequisites: Install OpenResty (or Nginx with the ngx_lua module), or use Dock
 
 - Foreground run:
   - From repo root: `openresty -p "$PWD/openresty" -c nginx.conf -g 'daemon off;'`
-  - Listens on `127.0.0.1:8001` by default; adjust in `openresty/nginx.conf` if needed.
+  - Listens on `0.0.0.0:7070` by default; adjust in `openresty/nginx.conf` if needed.
 
 Docker
 
 - Build: `docker build -t openresty-github-proxy -f openresty/Dockerfile .`
-- Run: `docker run --rm -p 8001:8001 --name gh-proxy openresty-github-proxy`
+- Run: `docker run --rm -p 7070:7070 --name gh-proxy openresty-github-proxy`
 - Smoke test: `bash scripts/smoke_test_openresty.sh`
 
 One-click deploy (Debian 12)
