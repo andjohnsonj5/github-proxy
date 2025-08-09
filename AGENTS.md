@@ -8,8 +8,8 @@
 
 Examples
 
-- Run a web service in background (transient service):
-  `systemd-run --unit=my-proxy --slice=system.slice --property=RemainAfterExit=no --description="FastAPI proxy" /usr/bin/env bash -c 'cd /path/to/project/proxy && exec uvicorn proxy.main:app --host 0.0.0.0 --port 8000'`
+- Run the OpenResty proxy in background (transient service):
+  `systemd-run --unit=gh-proxy --slice=system.slice --property=RemainAfterExit=no --description="OpenResty GitHub proxy" /usr/bin/env bash -c 'cd /path/to/project/openresty && exec openresty -p "$PWD" -c nginx.conf -g "daemon off;"'`
 
 - Run a one-off command in background and capture exit status via journalctl logs:
   `systemd-run --unit=my-task --slice=system.slice --description="one-off job" /usr/bin/env bash -c 'your-command --arg'`
@@ -38,4 +38,3 @@ Security & cleanup
 
 - Be careful when launching processes on behalf of other users or in multi-tenant environments; transient systemd units inherit system privileges unless constrained.
 - When running ephemeral units in CI/test runs, ensure you clean them up after tests. Prefer naming units with a predictable prefix and `--property=TimestampMonotonic=` or set timeouts inside the service if available.
-

@@ -1,4 +1,26 @@
-**仅含 Docker 的部署说明（中文）
+OpenResty 部署
+
+- 配置文件：`openresty/nginx.conf`（默认监听 `127.0.0.1:8001`）。
+- 本地前台运行（便于调试）：
+  - 在仓库根目录执行：`openresty -p "$PWD/openresty" -c nginx.conf -g 'daemon off;'`
+- 后台运行（仅限临时运维场景，由 Codex/操作者手动执行）：
+  - 参考 `AGENTS.md` 中的 `systemd-run` 指南，例如：
+    - `systemd-run --unit=gh-proxy --slice=system.slice --property=RemainAfterExit=no --description="OpenResty GitHub proxy" /usr/bin/env bash -c 'cd /path/to/repo/openresty && exec openresty -p "$PWD" -c nginx.conf -g "daemon off;"'`
+- 行为说明：默认路径启用流式转发；`*.git/info/refs` 与 `ls-refs` 小响应路径开启缓冲并关闭连接，以避免中间设备截断/缓存问题。
+
+Docker 使用
+
+- 构建镜像：`docker build -t openresty-github-proxy -f openresty/Dockerfile .`
+- 运行容器：`docker run --rm -p 8001:8001 --name gh-proxy openresty-github-proxy`
+- 查看日志：`docker logs -f gh-proxy`
+- 停止容器：`docker stop gh-proxy`
+
+一键部署脚本
+
+- 本地构建并运行：`bash scripts/deploy.sh`
+- 自定义镜像标签（跳过构建，使用已存在镜像）：
+  - `IMAGE=ghcr.io/<owner>/github-proxy-action:<tag> BUILD=no bash scripts/deploy.sh`
+  - 端口自定义：`PORT=8080 bash scripts/deploy.sh`
 
 下面的说明只关注使用 Docker 部署本项目，并包含在中国境内替换 GitHub Container Registry 镜像地址的方法以及常用的 Docker 运行/构建/清理命令。
 
@@ -8,7 +30,7 @@
   - 列出 packages（可能需权限）: `gh api repos/andjohnsonj5/github-proxy/packages`
 
 **项目中与 Docker 相关的文件**
-- `proxy/Dockerfile`（暴露端口 `8000`，运行 `uvicorn main:app`）。
+- `openresty/Dockerfile`（暴露端口 `8001`，运行 OpenResty 前台）。
 
 **镜像拉取与中国镜像替换**
 - workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.1`
@@ -19,14 +41,14 @@
 
 **本地构建（可选）**
 - 在仓库根目录构建镜像（使用仓库内 `Dockerfile`）:
-  - `docker build -t andjohnsonj5/github-proxy-action:local -f proxy/Dockerfile proxy`
+  - `docker build -t andjohnsonj5/github-proxy-action:local -f openresty/Dockerfile .`
 
 **运行容器（推荐 Docker 原生命令）**
 - 直接运行镜像（后台模式）:
-  - `docker run -d --name github-proxy -p 8000:8000 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:<tag>`
+  - `docker run -d --name github-proxy -p 8001:8001 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:<tag>`
   - 推荐在部署脚本中使用环境变量锁定镜像版本，例如：
     - `IMAGE_TAG=${IMAGE_TAG:-v1.0.1}`
-    - `docker run -d --name github-proxy -p 8000:8000 ghcr.io/andjohnsonj5/github-proxy-action:${IMAGE_TAG}`
+    - `docker run -d --name github-proxy -p 8001:8001 ghcr.io/andjohnsonj5/github-proxy-action:${IMAGE_TAG}`
 - 查看容器日志:
   - `docker logs -f github-proxy`
 - 停止并移除容器:
@@ -55,5 +77,5 @@
 - 停止并移除: `docker stop name && docker rm name`
 
 如果你需要，我可以：
-- 在 `proxy/` 目录下添加一个 `run.sh`，作为运行/重启/清理容器的便利脚本，或
+- 在 `openresty/` 目录下添加一个 `run.sh`，作为运行/重启/清理容器的便利脚本，或
 - 为 CI 提供一个带镜像前缀变量的示例脚本（用于替换 `ghcr.io` 为 `ghcr.nju.edu.cn`）。

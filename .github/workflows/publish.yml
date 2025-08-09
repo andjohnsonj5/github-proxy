@@ -29,15 +29,15 @@ jobs:
       - name: Build and push Docker image (on tag push)
         uses: docker/build-push-action@v4
         with:
-          context: ./proxy
-          file: ./proxy/Dockerfile
+          context: .
+          file: ./openresty/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/github-proxy-action:${{ github.ref_name }}
             ghcr.io/${{ github.repository_owner }}/github-proxy-action:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=FastAPI GitHub reverse proxy
+            org.opencontainers.image.description=OpenResty (Nginx+Lua) GitHub reverse proxy
 
       - name: Attempt to set package visibility to public (best-effort via REST)
         env:
