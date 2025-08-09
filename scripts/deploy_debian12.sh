@@ -3,17 +3,25 @@ set -euo pipefail
 
 # One-click deploy script for Debian 12 (uses Docker)
 # - Installs Docker if missing (uses Docker official repo)
-# - Builds local image from proxy/ or pulls IMAGE if set
-# - Runs container with restart policy
+# - By default pulls a published remote image and runs it
+# - Set BUILD_LOCAL=1 to build from local proxy/Dockerfile instead
+# - Set IMAGE to override specific image to pull/run
+# - Set IMAGE_REGISTRY to override registry prefix (e.g. ghcr.nju.edu.cn)
 
 # Repo root (script may be run from other working dir)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Defaults
+DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-proxy-action:v1.0.0"
+IMAGE_REGISTRY="${IMAGE_REGISTRY:-}"
+BUILD_LOCAL="${BUILD_LOCAL:-0}"
 
 IMAGE_DEFAULT="github-proxy:local"
 CONTAINER_NAME_DEFAULT="github-proxy"
 HOST_PORT_DEFAULT=8000
 CONTAINER_PORT_DEFAULT=8000
 
+# If user provided IMAGE env, respect it; otherwise we'll decide below
 IMAGE="${IMAGE:-}"
 CONTAINER_NAME="${CONTAINER_NAME:-$CONTAINER_NAME_DEFAULT}"
 HOST_PORT="${HOST_PORT:-$HOST_PORT_DEFAULT}"
@@ -72,19 +80,44 @@ install_docker() {
   $SUDO systemctl enable --now docker
 }
 
-build_or_pull_image() {
+# Decide which image to use: remote by default, unless BUILD_LOCAL=1
+prepare_image_choice() {
   if [ -n "${IMAGE:-}" ]; then
-    info "Pulling image: $IMAGE"
-    $SUDO docker pull "$IMAGE"
+    info "Using user-specified image: $IMAGE"
+    return
+  fi
+
+  if [ "${BUILD_LOCAL}" = "1" ]; then
+    info "BUILD_LOCAL=1 set; will build local image"
+    IMAGE="${IMAGE_DEFAULT}"
+    return
+  fi
+
+  # Use remote image default; allow registry override
+  if [ -n "${IMAGE_REGISTRY}" ]; then
+    # Replace known prefix if present
+    # If DEFAULT_REMOTE_IMAGE starts with ghcr.io, swap prefix
+    remote_suffix="${DEFAULT_REMOTE_IMAGE#ghcr.io/}"
+    IMAGE="${IMAGE_REGISTRY%/}/${remote_suffix}"
   else
+    IMAGE="${DEFAULT_REMOTE_IMAGE}"
+  fi
+  info "Defaulting to remote image: $IMAGE"
+}
+
+build_or_pull_image() {
+  if [ "${BUILD_LOCAL}" = "1" ] || [ "${IMAGE}" = "${IMAGE_DEFAULT}" ]; then
     # build local
     if [ -f "$REPO_DIR/proxy/Dockerfile" ]; then
       info "Building local image: $IMAGE_DEFAULT from $REPO_DIR/proxy/Dockerfile"
       $SUDO docker build -t "$IMAGE_DEFAULT" -f "$REPO_DIR/proxy/Dockerfile" "$REPO_DIR/proxy"
       IMAGE="$IMAGE_DEFAULT"
     else
-      err "No $REPO_DIR/proxy/Dockerfile found and no IMAGE specified. Aborting."; exit 1
+      err "No $REPO_DIR/proxy/Dockerfile found and BUILD_LOCAL requested. Aborting."; exit 1
     fi
+  else
+    info "Pulling image: $IMAGE"
+    $SUDO docker pull "$IMAGE"
   fi
 }
 
@@ -123,6 +156,8 @@ if ! $SUDO docker info >/dev/null 2>&1; then
   info "Waiting for Docker daemon to start..."
   sleep 2
 fi
+
+prepare_image_choice
 
 build_or_pull_image
 
