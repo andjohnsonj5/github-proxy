@@ -52,9 +52,9 @@ UPSTREAM_ADDR=ssh.github.com:443 ./ssh-forwarder
 Docker 运行
 
 - 直接拉取并运行（默认监听 7022，使用版本号）：
-  - `docker run -d --name gh-ssh-forward -p 7022:7022 ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.10`
+  - `docker run -d --name gh-ssh-forward -p 7022:7022 ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.11`
 - 指向 443 上游：
-  - `docker run -d --name gh-ssh-forward -p 7022:7022 -e UPSTREAM_ADDR=ssh.github.com:443 ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.10`
+  - `docker run -d --name gh-ssh-forward -p 7022:7022 -e UPSTREAM_ADDR=ssh.github.com:443 ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.11`
 - 自行构建（本地）：
   - `docker buildx build --load -t ssh-forward:local -f ssh-forward/Dockerfile .`
   - `docker run -d --name gh-ssh-forward -p 7022:7022 ssh-forward:local`
@@ -65,7 +65,7 @@ Docker 运行
   - `sudo bash scripts/deploy_ssh_forward_debian12.sh`
 - 可选参数：
   - `BUILD_LOCAL=1` 使用本地 Dockerfile 构建
-  - `IMAGE=ghcr.nju.edu.cn/andjohnsonj5/github-ssh-forwarder:v1.0.10` 指定镜像（示例镜像源替换，推荐使用版本号而非 latest/main）
+  - `IMAGE=ghcr.nju.edu.cn/andjohnsonj5/github-ssh-forwarder:v1.0.11` 指定镜像（示例镜像源替换，推荐使用版本号而非 latest/main）
   - `UPSTREAM_ADDR=ssh.github.com:443 HOST_PORT=7022 sudo bash scripts/deploy_ssh_forward_debian12.sh`
 ```
 

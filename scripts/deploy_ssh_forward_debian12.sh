@@ -11,7 +11,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Defaults
 # Use a versioned tag by default to ensure reproducibility
-DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.10"
+DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.11"
 IMAGE_REGISTRY="${IMAGE_REGISTRY:-}"
 BUILD_LOCAL="${BUILD_LOCAL:-0}"
 
