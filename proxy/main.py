@@ -66,6 +66,15 @@ async def proxy(full_path: str, request: Request):
 
         # Special-case: info/refs listing is small; buffer to send with Content-Length
         if request.method.upper() == "GET" and full_path.endswith(".git/info/refs"):
+            # For info/refs, avoid upstream content transforms; drop Accept-Encoding
+            no_ce_headers = dict(client_headers)
+            no_ce_headers.pop("accept-encoding", None)
+            req = client.build_request(
+                method=request.method,
+                url=str(url),
+                headers=no_ce_headers,
+                content=await request.body(),
+            )
             resp = await client.send(req, stream=False)
 
             headers = _filter_response_headers(resp.headers)
@@ -85,6 +94,8 @@ async def proxy(full_path: str, request: Request):
             # Ensure deterministic framing to avoid truncation by intermediaries
             new_headers.pop("transfer-encoding", None)
             new_headers["Content-Length"] = str(len(body))
+            # Close the connection deterministically to avoid mid-path buffering quirks
+            new_headers["Connection"] = "close"
 
             return Response(content=body, status_code=resp.status_code, headers=new_headers)
 
