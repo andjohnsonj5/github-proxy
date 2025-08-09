@@ -55,6 +55,7 @@ async def proxy(full_path: str, request: Request):
         url = f"{url}?{request.url.query}"
 
     client_headers = _filter_request_headers(dict(request.headers))
+    body_bytes = await request.body()
 
     # stream request body
     async with httpx.AsyncClient(timeout=None, follow_redirects=False) as client:
@@ -62,7 +63,7 @@ async def proxy(full_path: str, request: Request):
             method=request.method,
             url=str(url),
             headers=client_headers,
-            content=await request.body(),
+            content=body_bytes,
         )
 
         # Special-case: info/refs listing is small; buffer to send with Content-Length
@@ -111,7 +112,52 @@ async def proxy(full_path: str, request: Request):
 
             return StreamingResponse(body_iter(), status_code=resp.status_code, headers=new_headers)
 
-        # Default path: stream body (e.g., git-upload-pack)
+        # Special-case: POST ls-refs (git protocol v2) — small response; buffer + Content-Length
+        if (
+            request.method.upper() == "POST"
+            and (full_path.endswith(".git/git-upload-pack") or full_path.endswith(".git/git-receive-pack"))
+            and body_bytes
+            and b"command=ls-refs" in body_bytes
+            and b"command=fetch" not in body_bytes
+        ):
+            # Drop Accept-Encoding for stability
+            no_ce_headers = dict(client_headers)
+            no_ce_headers.pop("accept-encoding", None)
+            req = client.build_request(
+                method=request.method,
+                url=str(url),
+                headers=no_ce_headers,
+                content=body_bytes,
+            )
+            resp = await client.send(req, stream=False)
+
+            headers = _filter_response_headers(resp.headers)
+            new_headers = {}
+            upstream = UPSTREAM.rstrip("/")
+            base = str(request.base_url).rstrip("/")
+            for k, v in headers:
+                if k.lower() == "location" and v.startswith(upstream):
+                    new_headers[k] = base + v[len(upstream) :]
+                else:
+                    new_headers[k] = v
+
+            body = resp.content
+            new_headers.pop("transfer-encoding", None)
+            new_headers["Content-Length"] = str(len(body))
+            new_headers["Connection"] = "close"
+
+            async def body_iter2():
+                chunk_size = 64 * 1024
+                for i in range(0, len(body), chunk_size):
+                    yield body[i : i + chunk_size]
+                try:
+                    await asyncio.sleep(0.2)
+                except Exception:
+                    pass
+
+            return StreamingResponse(body_iter2(), status_code=resp.status_code, headers=new_headers)
+
+        # Default path: stream body (e.g., git-upload-pack fetch/packfile)
         resp = await client.send(req, stream=True)
 
         # build streaming response using a guarded async generator
