@@ -3,7 +3,7 @@
 下面的说明只关注使用 Docker 部署本项目，并包含在中国境内替换 GitHub Container Registry 镜像地址的方法以及常用的 Docker 运行/构建/清理命令。
 
 **仓库中发现的构建/发布信息（可用 `gh` 验证）**
-- Workflow: `Build and publish container`（文件：`.github/workflows/publish.yml`） — 该 workflow 已更新为仅在语义化 tag（例如 `v1.0.0`）推送时发布镜像，并同时打上 `${{ github.sha }}` 的标签；不再在 `main` 分支自动发布 `:latest`。在生产环境中应始终使用语义化版本标签或镜像 digest（`@sha256:...`）来确保可复现的部署。你可以用 `gh` 重现这些查询：
+- Workflow: `Build and publish container`（文件：`.github/workflows/publish.yml`） — 该 workflow 已更新为仅在语义化 tag（例如 `v1.0.1`）推送时发布镜像，并同时打上 `${{ github.sha }}` 的标签；不再在 `main` 分支自动发布 `:latest`。在生产环境中请使用语义化版本标签来确保可复现的部署。你可以用 `gh` 重现这些查询：
   - 列出 workflows: `gh api repos/andjohnsonj5/github-proxy/actions/workflows --jq '.workflows[] | {name,path}'`
   - 列出 packages（可能需权限）: `gh api repos/andjohnsonj5/github-proxy/packages`
 
@@ -11,12 +11,11 @@
 - `proxy/Dockerfile`（暴露端口 `8000`，运行 `uvicorn main:app`）。
 
 **镜像拉取与中国镜像替换**
-- workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.1` 或 `ghcr.io/andjohnsonj5/github-proxy-action@sha256:<digest>`
-- 中国镜像替换示例: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:<tag或digest>`
+- workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.1`
+- 中国镜像替换示例: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:<tag>`
 - 拉取镜像示例:
-  - 按 tag: `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.1`
-  - 按 digest: `docker pull ghcr.io/andjohnsonj5/github-proxy-action@sha256:95063893188719e452f5fbbc5c0e286cb323d7658ff83c37b0be18a9b117f78f`
-  - 注意：本仓库已移除 `:latest` 标签（registry 中不再维护 `latest`），请使用版本标签或 digest。
+  - `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.1`
+  - 注意：本仓库已移除 `:latest` 标签（registry 中不再维护 `latest`），请使用版本标签。
 
 **本地构建（可选）**
 - 在仓库根目录构建镜像（使用仓库内 `Dockerfile`）:
@@ -24,9 +23,9 @@
 
 **运行容器（推荐 Docker 原生命令）**
 - 直接运行镜像（后台模式）:
-  - `docker run -d --name github-proxy -p 8000:8000 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:<tag或digest>`
+  - `docker run -d --name github-proxy -p 8000:8000 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:<tag>`
   - 推荐在部署脚本中使用环境变量锁定镜像版本，例如：
-    - `IMAGE_TAG=${IMAGE_TAG:-21b83713e56c}`
+    - `IMAGE_TAG=${IMAGE_TAG:-v1.0.1}`
     - `docker run -d --name github-proxy -p 8000:8000 ghcr.io/andjohnsonj5/github-proxy-action:${IMAGE_TAG}`
 - 查看容器日志:
   - `docker logs -f github-proxy`
