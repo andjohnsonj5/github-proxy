@@ -25,7 +25,7 @@ Docker 使用
 下面的说明只关注使用 Docker 部署本项目，并包含在中国境内替换 GitHub Container Registry 镜像地址的方法以及常用的 Docker 运行/构建/清理命令。
 
 **仓库中构建/发布信息（可用 `gh` 验证）**
-- Workflow: `Build and publish container`（文件：`.github/workflows/publish.yml`） — 该 workflow 会在 `main` 分支推送以及语义化 tag（例如 `v1.0.8`）推送时构建并发布容器镜像：
+- Workflow: `Build and publish container`（文件：`.github/workflows/publish.yml`） — 该 workflow 会在 `main` 分支推送以及语义化 tag（例如 `v1.0.9`）推送时构建并发布容器镜像：
   - `main` 分支推送：发布 `:main` 与 `:${SHA}` 标签；
   - tag 推送：发布 `:vX.Y.Z` 与 `:${SHA}` 标签。
   - 列出 workflows: `gh api repos/andjohnsonj5/github-proxy/actions/workflows --jq '.workflows[] | {name,path}'`
@@ -35,10 +35,10 @@ Docker 使用
 - `openresty/Dockerfile`（暴露端口 `7070`，运行 OpenResty 前台）。
 
 **镜像拉取与中国镜像替换**
-- workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.8`
-- 中国镜像替换示例: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:v1.0.8`
+- workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.9`
+- 中国镜像替换示例: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:v1.0.9`
 - 拉取镜像示例:
-  - `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.8`
+  - `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.9`
   - 注意：本仓库已移除 `:latest` 标签（registry 中不再维护 `latest`），请使用版本标签。
 
 **本地构建（可选）**
@@ -47,9 +47,9 @@ Docker 使用
 
 -**运行容器（推荐 Docker 原生命令）**
 - 直接运行镜像（后台模式）:
-  - `docker run -d --name github-proxy -p 7070:7070 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:v1.0.8`
+  - `docker run -d --name github-proxy -p 7070:7070 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:v1.0.9`
   - 推荐在部署脚本中使用环境变量锁定镜像版本，例如：
-    - `IMAGE_TAG=${IMAGE_TAG:-v1.0.8}`
+    - `IMAGE_TAG=${IMAGE_TAG:-v1.0.9}`
     - `docker run -d --name github-proxy -p 8001:8001 ghcr.io/andjohnsonj5/github-proxy-action:${IMAGE_TAG}`
 - 查看容器日志:
   - `docker logs -f github-proxy`
