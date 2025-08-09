@@ -1,8 +1,11 @@
 name: Build and publish container
 
 on:
+  # Only build and publish images when a semantic version tag is pushed.
   push:
-    branches: [ main ]
+    tags: ['v*']
+  # Allow manual runs from the Actions UI for maintenance/testing.
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -23,14 +26,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (on tag push)
         uses: docker/build-push-action@v4
         with:
           context: ./proxy
           file: ./proxy/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/github-proxy-action:latest
+            ghcr.io/${{ github.repository_owner }}/github-proxy-action:${{ github.ref_name }}
             ghcr.io/${{ github.repository_owner }}/github-proxy-action:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
