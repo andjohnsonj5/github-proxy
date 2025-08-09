@@ -11,10 +11,10 @@
 - `proxy/Dockerfile`（暴露端口 `8000`，运行 `uvicorn main:app`）。
 
 **镜像拉取与中国镜像替换**
-- workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.0` 或 `ghcr.io/andjohnsonj5/github-proxy-action@sha256:<digest>`
+- workflow 发布的镜像示例: `ghcr.io/andjohnsonj5/github-proxy-action:v1.0.1` 或 `ghcr.io/andjohnsonj5/github-proxy-action@sha256:<digest>`
 - 中国镜像替换示例: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:<tag或digest>`
 - 拉取镜像示例:
-  - 按 tag: `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.0`
+  - 按 tag: `docker pull ghcr.io/andjohnsonj5/github-proxy-action:v1.0.1`
   - 按 digest: `docker pull ghcr.io/andjohnsonj5/github-proxy-action@sha256:95063893188719e452f5fbbc5c0e286cb323d7658ff83c37b0be18a9b117f78f`
   - 注意：本仓库已移除 `:latest` 标签（registry 中不再维护 `latest`），请使用版本标签或 digest。
 

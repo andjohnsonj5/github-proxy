@@ -2,9 +2,11 @@ from typing import Optional
 
 from fastapi import FastAPI, Request
 from starlette.responses import StreamingResponse
+import logging
 import httpx
 
 app = FastAPI(title="GitHub Reverse Proxy")
+logger = logging.getLogger("proxy")
 
 UPSTREAM = "https://github.com"
 
@@ -62,7 +64,7 @@ async def proxy(full_path: str, request: Request):
 
         resp = await client.send(req, stream=True)
 
-        # build streaming response using StreamingResponse
+        # build streaming response using a guarded async generator
         headers = _filter_response_headers(resp.headers)
 
         # rewrite Location header so clients don't follow redirects to upstream directly
@@ -76,4 +78,23 @@ async def proxy(full_path: str, request: Request):
             else:
                 new_headers[k] = v
 
-        return StreamingResponse(resp.aiter_bytes(), status_code=resp.status_code, headers=new_headers)
+        async def body_iter():
+            try:
+                async for chunk in resp.aiter_raw():
+                    # If the client disconnected, stop early to avoid raising
+                    if await request.is_disconnected():
+                        break
+                    yield chunk
+            except httpx.ReadError as exc:
+                # Upstream closed unexpectedly; log and end stream gracefully
+                logger.warning("Upstream read error while streaming %s: %s", url, exc)
+            except Exception as exc:  # noqa: BLE001
+                # Avoid crashing the ASGI app on stream errors
+                logger.exception("Unexpected error while streaming %s: %s", url, exc)
+            finally:
+                try:
+                    await resp.aclose()
+                except Exception:
+                    pass
+
+        return StreamingResponse(body_iter(), status_code=resp.status_code, headers=new_headers)

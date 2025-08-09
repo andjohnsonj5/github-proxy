@@ -12,7 +12,8 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Defaults
-DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-proxy-action:v1.0.0"
+# Default remote image tag (bump when publishing new release)
+DEFAULT_REMOTE_IMAGE="ghcr.io/andjohnsonj5/github-proxy-action:v1.0.1"
 IMAGE_REGISTRY="${IMAGE_REGISTRY:-}"
 BUILD_LOCAL="${BUILD_LOCAL:-0}"
 
@@ -107,11 +108,16 @@ prepare_image_choice() {
 
 build_or_pull_image() {
   if [ "${BUILD_LOCAL}" = "1" ] || [ "${IMAGE}" = "${IMAGE_DEFAULT}" ]; then
-    # build local
+    # Build locally. If user has provided IMAGE, build/tag to that name; otherwise use IMAGE_DEFAULT
     if [ -f "$REPO_DIR/proxy/Dockerfile" ]; then
-      info "Building local image: $IMAGE_DEFAULT from $REPO_DIR/proxy/Dockerfile"
-      $SUDO docker build -t "$IMAGE_DEFAULT" -f "$REPO_DIR/proxy/Dockerfile" "$REPO_DIR/proxy"
-      IMAGE="$IMAGE_DEFAULT"
+      if [ -n "${IMAGE:-}" ] && [ "${BUILD_LOCAL}" = "1" ]; then
+        info "Building local image with user tag: $IMAGE from $REPO_DIR/proxy/Dockerfile"
+        $SUDO docker build -t "$IMAGE" -f "$REPO_DIR/proxy/Dockerfile" "$REPO_DIR/proxy"
+      else
+        info "Building local image: $IMAGE_DEFAULT from $REPO_DIR/proxy/Dockerfile"
+        $SUDO docker build -t "$IMAGE_DEFAULT" -f "$REPO_DIR/proxy/Dockerfile" "$REPO_DIR/proxy"
+        IMAGE="$IMAGE_DEFAULT"
+      fi
     else
       err "No $REPO_DIR/proxy/Dockerfile found and BUILD_LOCAL requested. Aborting."; exit 1
     fi
