@@ -1,21 +1,18 @@
 **仅含 Docker 的部署说明（中文）
 
-下面的说明只关注使用 Docker 部署本项目，并包含在中国境内替换 GitHub Container Registry 镜像地址的方法以及用 `systemd-run` 启动容器的建议。
+下面的说明只关注使用 Docker 部署本项目，并包含在中国境内替换 GitHub Container Registry 镜像地址的方法以及常用的 Docker 运行/构建/清理命令。
 
-**仓库中发现的构建/发布信息（使用 `gh` 获取）**
-- Workflow: `Build and publish container` (文件：`.github/workflows/publish.yml`) — 该 workflow 会把镜像推送到 `ghcr.io/${{ github.repository_owner }}/github-proxy-action:latest`（并带 `${{ github.sha }}` 标签）。
-- 包（Packages）查询: `gh api repos/andjohnsonj5/github-proxy/packages` 返回 404（可能需要权限或尚未列出）；workflow 中的镜像名为 `github-proxy-action`。
-
-（你可以用下面命令重复我做的检查）
-- 列出 workflows: `gh api repos/andjohnsonj5/github-proxy/actions/workflows --jq '.workflows[] | {name,path}'`
-- 尝试列出 repo 的 packages: `gh api repos/andjohnsonj5/github-proxy/packages`
+**仓库中发现的构建/发布信息（可用 `gh` 验证）**
+- Workflow: `Build and publish container`（文件：`.github/workflows/publish.yml`） — 该 workflow 会把镜像推送到 `ghcr.io/${{ github.repository_owner }}/github-proxy-action:latest`，同时还会带 `${{ github.sha }}` 的标签。你可以用 `gh` 重现这些查询：
+  - 列出 workflows: `gh api repos/andjohnsonj5/github-proxy/actions/workflows --jq '.workflows[] | {name,path}'`
+  - 列出 packages（可能需权限）: `gh api repos/andjohnsonj5/github-proxy/packages`
 
 **项目中与 Docker 相关的文件**
-- `proxy/Dockerfile`（暴露端口 `8000`，运行 `uvicorn main:app`）
+- `proxy/Dockerfile`（暴露端口 `8000`，运行 `uvicorn main:app`）。
 
 **镜像拉取与中国镜像替换**
 - workflow 中的镜像（原地址）: `ghcr.io/andjohnsonj5/github-proxy-action:latest`
-- 在中国内网可替换为: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:latest`
+- 中国镜像替换示例: `ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:latest`
 - 拉取镜像示例:
   - 原始: `docker pull ghcr.io/andjohnsonj5/github-proxy-action:latest`
   - 中国镜像: `docker pull ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:latest`
@@ -24,22 +21,36 @@
 - 在仓库根目录构建镜像（使用仓库内 `Dockerfile`）:
   - `docker build -t andjohnsonj5/github-proxy-action:local -f proxy/Dockerfile proxy`
 
-**用 `systemd-run` 启动容器（推荐）**
-- 说明: 请勿使用 `nohup` 或 `... &`，推荐用 `systemd-run` 启动为 transient service，便于管理与日志收集。
-- 示例（直接运行远端镜像）:
-  - `systemd-run --unit=github-proxy --slice=system.slice --property=RemainAfterExit=no --description="github-proxy" /usr/bin/env bash -c 'exec docker run --rm --name github-proxy -p 8000:8000 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:latest'`
-  - 查看日志: `journalctl -u github-proxy -f`
-  - 停止并清理: `systemctl kill --kill-who=main --signal=SIGTERM github-proxy`；如需，`systemctl reset-failed github-proxy`
+**运行容器（推荐 Docker 原生命令）**
+- 直接运行镜像（后台模式）:
+  - `docker run -d --name github-proxy -p 8000:8000 ghcr.nju.edu.cn/andjohnsonj5/github-proxy-action:latest`
+- 查看容器日志:
+  - `docker logs -f github-proxy`
+- 停止并移除容器:
+  - `docker stop github-proxy && docker rm github-proxy`
 
 **使用 `docker-compose`（如果需要）**
-- 本仓库未包含 `docker-compose.yml`（已检测 `proxy/Dockerfile`），若你添加 `docker-compose.yml`，请先把 `image:` 字段替换为 `ghcr.nju.edu.cn/...`，或在 CI 中通过变量替换镜像前缀。
+- 本仓库当前未包含 `docker-compose.yml`。如果你添加 `docker-compose.yml`，在国内部署时请把 `image:` 字段替换为 `ghcr.nju.edu.cn/...`，或通过 CI 变量替换镜像前缀。
 
 **私有镜像访问**
-- 若镜像为私有：先登陆替换后的 registry：`docker login ghcr.nju.edu.cn`，或在 Kubernetes 中创建 `imagePullSecret`。
+- 若镜像为私有：先登录替换后的 registry：`docker login ghcr.nju.edu.cn`。
 
-**总结与下一步**
-- 我已用 `gh` 查到 workflow 会发布镜像 `ghcr.io/andjohnsonj5/github-proxy-action:latest`，建议在国内将 `ghcr.io` 替换为 `ghcr.nju.edu.cn`。
-- 如果你希望我：
-  - 把文档写入到 `proxy/` 目录下，或
-  - 为该镜像生成一个可直接运行的 `systemd-run` 启动脚本（带具体 unit 名称/端口），
-  请告诉我你希望的 unit 名称和是否需要使用镜像的 `latest` 或 `${{ github.sha }}` 标签，我会继续完善文件和示例命令.
+**CI/CD 与自动化建议**
+- 在 CI 环境中通过变量控制镜像前缀，例如：
+  - `IMAGE_REGISTRY=${IMAGE_REGISTRY:-ghcr.io}`
+  - 在中国环境设为 `ghcr.nju.edu.cn` 并在 build/push 脚本中使用 `${IMAGE_REGISTRY}` 作为前缀，避免硬编码。
+
+**清理与维护**
+- 清理未使用镜像: `docker image prune -a`（谨慎使用）。
+- 列出镜像: `docker images`；列出容器: `docker ps -a`。
+
+**常用命令速查**
+- 拉取镜像: `docker pull <registry>/owner/image:tag`
+- 本地构建: `docker build -t owner/image:tag -f path/to/Dockerfile .`
+- 运行容器（后台）: `docker run -d --name name -p hostPort:containerPort registry/owner/image:tag`
+- 查看日志: `docker logs -f name`
+- 停止并移除: `docker stop name && docker rm name`
+
+如果你需要，我可以：
+- 在 `proxy/` 目录下添加一个 `run.sh`，作为运行/重启/清理容器的便利脚本，或
+- 为 CI 提供一个带镜像前缀变量的示例脚本（用于替换 `ghcr.io` 为 `ghcr.nju.edu.cn`）。
