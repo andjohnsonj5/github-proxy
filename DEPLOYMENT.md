@@ -91,3 +91,22 @@ SSH 转发器（ssh-forward）部署
   - `docker run -d --name gh-ssh-forward -p 7022:7022 -e UPSTREAM_ADDR=ssh.github.com:443 ghcr.io/andjohnsonj5/github-ssh-forwarder:v1.0.10`
 - 一键部署脚本（Debian 12）：
   - `sudo bash scripts/deploy_ssh_forward_debian12.sh`
+
+版本发布（打 Tag 触发构建）
+
+- 推荐使用语义化版本号，例如：`v1.0.11`。
+- 仅打 tag 即可触发容器构建（不需要创建 GitHub Release）。
+- 创建 tag 并推送：
+  - `git tag v1.0.11 && git push origin v1.0.11`
+- 或使用 gh API 创建 tag（不创建 release）：
+  - `OWNER=$(gh repo view --json owner --jq .owner.login)`
+  - `REPO=$(gh repo view --json name --jq .name)`
+  - `SHA=$(git rev-parse HEAD)`
+  - `gh api -X POST "/repos/$OWNER/$REPO/git/refs" -f ref=refs/tags/v1.0.11 -f sha=$SHA`
+- 观察构建：
+  - `gh run list --workflow 'Build and publish ssh-forward container' --limit 1`
+  - `RUN_ID=$(gh run list --workflow 'Build and publish ssh-forward container' --limit 1 --json databaseId --jq '.[0].databaseId') && gh run watch "$RUN_ID" --exit-status`
+- 拉取并验证版本化镜像：
+  - SSH 转发器：`docker pull ghcr.io/$(gh repo view --json owner --jq .owner.login)/github-ssh-forwarder:v1.0.11`
+  - OpenResty 代理（如有新版）：`docker pull ghcr.io/$(gh repo view --json owner --jq .owner.login)/github-proxy-action:v1.0.11`
+  - 运行（SSH）：`docker run -d --name gh-ssh-forward -p 7022:7022 ghcr.io/<owner>/github-ssh-forwarder:v1.0.11`
