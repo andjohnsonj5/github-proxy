@@ -38,6 +38,8 @@ def _filter_response_headers(headers):
         "trailers",
         "transfer-encoding",
         "upgrade",
+        # Avoid propagating upstream content-length when we stream and may truncate on error
+        "content-length",
     }
     return [(k, v) for k, v in headers.items() if k.lower() not in hop_by_hop]
 
